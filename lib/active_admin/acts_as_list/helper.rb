@@ -18,10 +18,18 @@ module ActiveAdmin
       #    end
       #  end
       def sortable_columns
-        include_column_move_to_top
-        include_column_move_up
-        include_column_move_down
-        include_column_move_to_bottom
+        column 'Position' do |resource|
+          links = ''.html_safe
+          unless resource.first?
+            links += include_column_move_to_top(resource)
+            links += include_column_move_up(resource)
+          end
+          unless resource.last?
+            links += include_column_move_down(resource)
+            links += include_column_move_to_bottom(resource)
+          end
+          links
+        end
       end
 
       # Call this inside your resource definition to add the needed member actions
@@ -34,7 +42,7 @@ module ActiveAdmin
       #  ActiveAdmin.register Player do
       #    # Sort players by position
       #    config.sort_order = 'position'
-      #   
+      #
       #    # Add member actions for positioning.
       #    sortable_member_actions
       #  end
@@ -47,80 +55,76 @@ module ActiveAdmin
 
       private
 
-      def include_column_move_to_top
-        column "&#9650;&#9650;".html_safe do |resource|
-          link_to("&#9650;&#9650;".html_safe, generate_path_for_action(:move_to_top, resource), :class => "arrow") unless resource.first?
+      def include_column_move_to_top(resource)
+        link_to(generate_path_for_action(:move_to_top, resource), :class => "member_link icon") do
+          content_tag(:i, '', class: "icon-angle-double-up", title: "Move to top")
         end
       end
 
-      def include_column_move_up
-        column "&#9650;".html_safe do |resource|
-          link_to("&#9650;".html_safe, generate_path_for_action(:move_up, resource), :class => "arrow") unless resource.first?
+      def include_column_move_up(resource)
+        link_to(generate_path_for_action(:move_up, resource), :class => "member_link icon") do
+          content_tag(:i, '', class: "icon-angle-up", title: "Move up")
         end
       end
 
-      def include_column_move_down
-        column "&#9660;".html_safe do |resource|
-          link_to("&#9660;".html_safe, generate_path_for_action(:move_down, resource), resource), :class => "arrow") unless resource.last?
+      def include_column_move_down(resource)
+        link_to(generate_path_for_action(:move_down, resource), :class => "member_link icon") do
+          content_tag(:i, '', class: "icon-angle-down", title: "Move down")
         end
       end
 
-      def include_column_move_to_bottom
-        column "&#9660;&#9660;".html_safe do |resource|
-          link_to("&#9660;&#9660;".html_safe, generate_path_for_action(:move_to_bottom, resource), resource), :class => "arrow") unless resource.last?
+      def include_column_move_to_bottom(resource)
+        link_to(generate_path_for_action(:move_to_bottom, resource), :class => "member_link icon") do
+          content_tag(:i, '', class: "icon-angle-double-down", title: "Move to bottom")
         end
       end
 
       def include_member_action_move_to_top
         member_action :move_to_top do
           if resource.first?
-            redirect_to :back, :notice => localize_notice(resource_class, 'acts_as_list.illegal_move_to_top')
+            redirect_to :back, :notice => "That #{resource_class.model_name.human.titleize} is already at the top"
             return
           end
 
           resource.move_to_top
-          redirect_to :back, :notice => localize_notice(resource_class, 'acts_as_list.moved_to_top')
+          redirect_to :back, :notice => "Moved #{resource_class.model_name.human.titleize} to top"
         end
       end
 
       def include_member_action_move_to_bottom
         member_action :move_to_bottom do
           if resource.last?
-            redirect_to :back, :notice => localize_notice(resource_class, 'acts_as_list.illegal_move_to_bottom')
+            redirect_to :back, :notice => "That #{resource_class.model_name.human.titleize} is already at the bottom"
             return
           end
 
           resource.move_to_bottom
-          redirect_to :back, :notice => localize_notice(resource_class, 'acts_as_list.moved_to_bottom')
+          redirect_to :back, :notice => "Moved #{resource_class.model_name.human.titleize} to bottom"
         end
       end
 
       def include_member_action_move_up
         member_action :move_up do
           if resource.first?
-            redirect_to :back, :notice => localize_notice(resource_class, 'acts_as_list.illegal_move_up')
+            redirect_to :back, :notice => "#{resource_class.model_name.human.titleize} cannot be moved any further up"
             return
           end
 
           resource.move_higher
-          redirect_to :back, :notice => localize_notice(resource_class, 'acts_as_list.moved_up')
+          redirect_to :back, :notice => "#{resource_class.model_name.human.titleize} moved up"
         end
       end
 
       def include_member_action_move_down
         member_action :move_down do
           if resource.last?
-            redirect_to :back, :notice => localize_notice(resource_class, 'acts_as_list.illegal_move_down')
+            redirect_to :back, :notice => "#{resource_class.model_name.human.titleize} cannot be moved any futher down"
             return
           end
 
           resource.move_lower
-          redirect_to :back, :notice => localize_notice(resource_class, 'acts_as_list.moved_down')
+          redirect_to :back, :notice => "#{resource_class.model_name.human.titleize} moved down"
         end
-      end
-
-      def localize_notice(resource_class, locale_key)
-        I18n.t(locale_key, :resource => resource_class.to_s.camelize.constantize.model_name.human )
       end
 
       def generate_path_for_action(action, resource)
